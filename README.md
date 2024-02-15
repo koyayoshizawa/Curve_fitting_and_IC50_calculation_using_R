@@ -1,1 +1,1 @@
-# Curve-fitting_and_IC50_calculation_in_R
+# Curve-fitting_and_IC50_calculation_using_R
