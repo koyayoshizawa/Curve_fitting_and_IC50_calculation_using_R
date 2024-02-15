@@ -1,1 +1,1 @@
-# Yoshizawa_et_al_MiMB_2024
+# Curve-fitting_and_IC50_calculation_in_R
