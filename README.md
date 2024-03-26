@@ -1,6 +1,6 @@
 # Curve fitting and IC50 calculation using R
 
-## Files for download.
+## Files for download
 
 - "MiMB2024-ploidy_SampleData.csv" is a datasheet containing raw data of dose-response cell proliferation assay for two inhibitors in isogenic ploidy series of HAP1 cells.
   - Doxorubicin: a topoisomerase II inhibitor. No ploidy-associated efficacy change was observed.
@@ -20,9 +20,9 @@
 
 ## Remarks
 
-- See sessionInfo.txt for the versions of R, Rstudio, and packages used in the Rmd file.
+See sessionInfo.txt for the versions of R, Rstudio, and packages used in the Rmd file.
 
-## Article info
+### Article information
 
-1. K. Yoshizawa et al., Tetraploidy-linked sensitization to CENP-E inhibition in human cells, Molecular Oncology 17 (6) (2023) 1148–1166. doi:10.1002/1878-0261.13379
-2. K. Yoshizawa and R. Uehara, Comparative pharmacological analysis of mitotic inhibitors using isogenic ploidy series of HAP1 cells, submitted to Methods in Molecular Biology
+1. K. Yoshizawa and R. Uehara, Comparative pharmacological analysis of mitotic inhibitors using isogenic ploidy series of HAP1 cells, submitted to Methods in Molecular Biology
+2. K. Yoshizawa et al., Tetraploidy-linked sensitization to CENP-E inhibition in human cells, Molecular Oncology 17 (6) (2023) 1148–1166. doi:10.1002/1878-0261.13379
