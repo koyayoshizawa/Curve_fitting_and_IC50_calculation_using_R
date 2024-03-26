@@ -1,0 +1,180 @@
+---
+title: "MiMB2024-ploidy_CurveFitting_script"
+author: "Koya Yoshizawa"
+date: "2024-03-26"
+output: html_document
+---
+
+```{r import packages}
+if (!require("pacman")) install.packages("pacman")
+library(pacman)
+packagelist <- c(
+  "DescToolsAddIns",
+  "ggbeeswarm", 
+  "ggplot2", 
+  "lemon",
+  "minpack.lm",
+  "patchwork",
+  "purrr",
+  "readr",
+  "Rmisc", 
+  "tidyverse"
+)
+pacman::p_load(packagelist, character.only = TRUE)
+#pacman::p_update() #comment out this line after the first use
+```
+
+```{r read csv}
+dir <- dir.choose(caption = "Select directory containing files of Rmd and csv")
+
+outputdir <- paste(dir, "output_MiMB2024-ploidy", sep ="/")
+NLRdir <- paste(outputdir, "NLR_MiMB2024-ploidy", sep = "/")
+
+if(!dir.exists(outputdir)){
+  dir.create(outputdir)
+}
+if(!dir.exists(NLRdir)){
+  dir.create(NLRdir)
+}
+
+d1 <- read_csv(paste0(dir,"/","MiMB2024-ploidy_SampleData.csv"), show_col_types = FALSE) %>% as_tibble()
+
+fontsize = 12
+inhibitorlist <-unique(d1$inhibitor)
+ploidylist <-c("Haploid", "Diploid", "Tetraploid")
+ploidylist_num <- c(paste(c(1,2,3), ploidylist, sep = "_"))
+unitlist <-unique(d1$unit)
+colourlist <- c("#696969", "#00c000", "#e4007f")
+shapelist <- c(23,21,24)
+
+d1_ano <- d1 %>% 
+  pivot_longer(cols = ploidylist, names_to = "ploidy", values_to = "growth") %>%
+  dplyr::mutate(num_ploidy = match(ploidy, ploidylist),
+                num_inhibitor = match(inhibitor, inhibitorlist),
+                inhibitor_unit = paste0(inhibitor, " (", unit, ")"),
+                unit2 = paste0("(", unit, ")")) %>% na.omit()
+```
+
+```{r curve-fitting and IC50 calculation}
+fit_and_calc_IC50 <- function(grid_inhibitor, grid_ploidy, grid_replicate) {
+    d1_extracted <- d1_ano %>%
+        dplyr::filter(inhibitor == grid_inhibitor & 
+               ploidy == grid_ploidy &
+               replicate == grid_replicate)
+    
+    if(nrow(d1_extracted) > 0) {
+
+        unit <- d1_extracted %>% dplyr::select(unit) %>% head(n=1) %>% as.character()
+
+        res_lm <- lm(formula=growth~log(concentration), data=d1_extracted)
+        x <- d1_extracted$concentration
+        obs <- d1_extracted$growth
+        pred <- function(parS, xx) parS$d + (parS$a - parS$d) / (1 + (xx/parS$c) ^parS$b)
+        resid <- function(parS, observed, xx) observed - pred(parS,xx)
+        parStart <- list(a=0.5, b=1, c=5, d=0.1)
+        
+        nls.out <- nls.lm(par=parStart, fn=resid, observed=obs, xx=x, control=nls.lm.control(maxiter=1024,nprint=1))
+
+        y_IC50 <- 0.5
+        nls_a <- nls.out$par$a
+        nls_b <- nls.out$par$b
+        nls_c <- nls.out$par$c
+        nls_d <- nls.out$par$d
+        x_IC50 <- nls_c * ((nls_a - nls_d) / (y_IC50 - nls_d) - 1) ^ (1 / nls_b)
+        
+        return(data.frame(grid_inhibitor, unit, grid_ploidy, grid_replicate, nls_a, nls_b, nls_c, nls_d, nls.out$deviance, x_IC50))
+    } else {
+        return(NULL)
+    }
+}
+
+plotting_IC50 <- function(grid_inhibitor, grid_ploidy, grid_replicate) {
+    d1_extracted <- d1_ano %>%
+        dplyr::filter(inhibitor == grid_inhibitor & 
+               ploidy == grid_ploidy &
+               replicate == grid_replicate)
+    
+    df_nlr_extracted <- df_nlr %>%
+        dplyr::filter(inhibitor == grid_inhibitor & 
+               ploidy == grid_ploidy &
+               replicate == grid_replicate)
+    
+    a <- df_nlr_extracted[["nls_a"]]
+    b <- df_nlr_extracted[["nls_b"]]
+    c <- df_nlr_extracted[["nls_c"]]
+    d <- df_nlr_extracted[["nls_d"]]
+    
+    if(nrow(d1_extracted) > 0) {
+        seqval <- min(d1_extracted$concentration)
+        filename = paste0(NLRdir, "/", grid_inhibitor, "_", grid_ploidy, "_rep", grid_replicate, ".png")
+        png(file = filename)
+        plot(d1_extracted$concentration, d1_extracted$growth, log="x")
+        x.lines <- seq(min(d1_extracted$concentration), max(d1_extracted$concentration), by=seqval)
+        x.pred <- d + ( a - d ) / ( 1 + (x.lines / c) ^b)
+        lines(x.lines, x.pred, col=2)
+        dev.off()
+    } else {
+        return(NULL)
+    }
+}
+
+combinations <- expand.grid(grid_inhibitor = inhibitorlist,
+                            grid_ploidy = ploidylist,
+                            grid_replicate = unique(d1_ano$replicate))
+
+results <- pmap_dfr(combinations, fit_and_calc_IC50)
+
+df_nlr <- results %>% dplyr::rename(inhibitor = grid_inhibitor, ploidy = grid_ploidy, replicate = grid_replicate) %>% 
+  dplyr::mutate(inhibitor_unit = paste0(inhibitor, " (", unit, ")")) 
+
+pmap(combinations, plotting_IC50)
+
+write.csv(df_nlr, file = paste(outputdir, "df_nlr.csv", sep = "/"))
+```
+
+```{r plot}
+d1_ano_sum <- summarySE(d1_ano, measurevar=c("growth"), groupvars=c("inhibitor_unit", "ploidy", "concentration"))
+df_nlr_sum <- summarySE(data = df_nlr, measurevar = "x_IC50", groupvars = c("inhibitor_unit", "ploidy"))
+
+p1 <- ggplot(data=d1_ano_sum, aes(x=concentration, y=growth, shape = factor(ploidy, levels = ploidylist), fill=factor(ploidy, levels = ploidylist))) +
+  facet_rep_wrap(.~inhibitor_unit, scales = "free_x", repeat.tick.labels = TRUE, ncol = 5) +
+  scale_y_continuous(limits = c(-.05,1.25), breaks=seq(0,1.25,0.25)) +
+  scale_x_log10() +
+  annotation_logticks(sides ="b", size = 0.5) +
+  geom_point(size = 3, alpha=.8, colour = "black", stroke = .4) +
+  geom_linerange(aes(ymin=growth-se,ymax=growth+se), linetype="solid", linewidth=.5, alpha = .8, color = "black") +
+  scale_fill_manual(values = colourlist) +
+  scale_colour_manual(values = colourlist) +
+  scale_shape_manual(values = shapelist) +
+  labs(x="Inhibitor concentration",y=expression(paste(Abs[norm], " (a.u.)", sep = "")), title = "Figure 1: Dose-response curve of cell proliferation, mean ± S.E.", shape = "Ploidy", color = "Ploidy", fill = "Ploidy") +
+  theme(axis.text=element_text(size = fontsize, colour="black"), 
+        legend.position="bottom", 
+        plot.title = element_text(size = fontsize),
+        text=element_text(size = fontsize), 
+        strip.text.x = element_text(size = fontsize))
+
+p2 <- ggplot(data=df_nlr, aes(x=ploidy, y=x_IC50)) +
+  facet_rep_wrap(.~factor(inhibitor_unit), scales = "free_y", drop = TRUE, repeat.tick.labels = TRUE) +
+  geom_quasirandom(aes(shape = factor(ploidy), fill = factor(ploidy)), size = 2.5, alpha=.8, colour = "black", stroke = .4) +
+  stat_summary(fun = "mean", geom = "crossbar",  width = .6, alpha = .8, linewidth = .3) + 
+  geom_errorbar(data = df_nlr_sum, aes(ymin = x_IC50 - se, ymax = x_IC50 + se), alpha = .8, linewidth = .6, width = .2) +
+  guides(x = guide_axis(angle = 30)) +
+  scale_x_discrete(limit=ploidylist, labels = c("Haploid", "Diploid", "Tetraploid")) +
+  scale_y_continuous(limit = c(0, NA)) +
+  scale_fill_manual(values = colourlist) +
+  scale_colour_manual(values = colourlist) +
+  scale_shape_manual(values = shapelist) +
+  labs(x = "Ploidy", y = expression(IC[50]), title = expression(paste("Figure 2: ", IC[50], " values, mean ± S.E.", sep = ""))) +
+  theme(axis.text=element_text(size = fontsize, colour="black"), 
+        legend.position = "none",
+        text=element_text(size = fontsize), 
+        plot.title=element_text(size = fontsize),
+        strip.text.x = element_text(size = fontsize))
+
+p3 <- p1 / p2
+p3
+
+fileName <- "MiMB2024-ploidy_plot_CGA_IC50.png"
+ggsave(file = fileName, plot = p3, device = "png", path = outputdir,  width = 7, height = 7, dpi = 300)
+```
+
