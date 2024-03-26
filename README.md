@@ -13,6 +13,7 @@
 2. Open the Rmd file in Rstudio.
 3. Run all chancks from the top down.
    - Updating packages would be required.
+   - Choose a directory where Rmd and csv files were put in a popup window.
 5. New folder named "output_MiMB2024-ploidy" is automatically made and following files are outputted:
    - df_nlr.csv is a datasheet containing parameters of curve fitting and IC50 values for all conditions.
    - MiMB2024-ploidy_plot_CGA_IC50.png shows plots of dose-response curve and IC50s.
