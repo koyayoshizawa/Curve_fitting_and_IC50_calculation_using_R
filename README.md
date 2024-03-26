@@ -12,7 +12,7 @@
 1. Download "MiMB2024-ploidy_Script.Rmd" and "MiMB2024-ploidy_SampleData.csv" to your working directory.
 2. Open the Rmd file in Rstudio.
 3. Run all chancks from the top down.
-   - Updating packages would be required.
+   - Update packages first if you faced any errors.
    - Choose a directory where Rmd and csv files were put in a popup window.
 5. New folder named "output_MiMB2024-ploidy" is automatically made and following files are outputted:
    - df_nlr.csv is a datasheet containing parameters of curve fitting and IC50 values for all conditions.
