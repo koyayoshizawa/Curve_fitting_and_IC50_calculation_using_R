@@ -13,11 +13,18 @@
 2. Open the Rmd file in Rstudio.
 3. Run all chancks from the top down.
    - Update packages first if you faced any errors.
-   - Choose a directory where Rmd and csv files were put in a popup window.
+   - Popup windiw ask a directory where Rmd and csv files were put.
 5. New folder named "output_MiMB2024-ploidy" is automatically made and following files are outputted:
    - df_nlr.csv is a datasheet containing parameters of curve fitting and IC50 values for all conditions.
    - MiMB2024-ploidy_plot_CGA_IC50.png shows plots of dose-response curve and IC50s.
    - NLR_MiMB2024-ploidy (folder) contains 48 plots of experimental data and fitted curve for all conditions.
+
+## Run with your data
+
+1. Prepare csv file filled with your data and change the sentence in lane 40 in Rmd file.
+2. Run the Rmd file until 3rd chank and check the curve-fitting quality with plots outputted in "NLR_MiMB2024-ploidy" folder.
+3. If you find a plot with bad fitting quality, try to change the initial values of parameters defined at lane 74 as parStart in Rmd file.
+4. After the parameter adjustement, run the rest chanks and get IC50 plots.
 
 ## Remarks
 
