@@ -1,11 +1,12 @@
 ---
-title: "MiMB2024-ploidy_CurveFitting_script"
+title: "MiMB2024_CurveFitting_script"
 author: "Koya Yoshizawa"
-date: "2024-03-26"
+date: "2024-03-21"
 output: html_document
 ---
 
-```{r import packages}
+```{r import libraries}
+# import libraries
 if (!require("pacman")) install.packages("pacman")
 library(pacman)
 packagelist <- c(
@@ -25,7 +26,8 @@ pacman::p_load(packagelist, character.only = TRUE)
 ```
 
 ```{r read csv}
-dir <- dir.choose(caption = "Select directory containing files of Rmd and csv")
+dir <- choose.dir(caption = "Select directory containing files of Rmd and csv") #For windows users. Choose the folder directory in a popup window.
+#dir <- "C:\\XXXXX\\test" #For mac users. Add # in the begging of l30, remove # in the beginning of this row, and define the folder directory.
 
 outputdir <- paste(dir, "output_MiMB2024-ploidy", sep ="/")
 NLRdir <- paste(outputdir, "NLR_MiMB2024-ploidy", sep = "/")
@@ -41,7 +43,7 @@ d1 <- read_csv(paste0(dir,"/","MiMB2024-ploidy_SampleData.csv"), show_col_types 
 
 fontsize = 12
 inhibitorlist <-unique(d1$inhibitor)
-ploidylist <-c("Haploid", "Diploid", "Tetraploid")
+ploidylist <-c("haploid","diploid", "tetraploid")
 ploidylist_num <- c(paste(c(1,2,3), ploidylist, sep = "_"))
 unitlist <-unique(d1$unit)
 colourlist <- c("#696969", "#00c000", "#e4007f")
@@ -174,7 +176,6 @@ p2 <- ggplot(data=df_nlr, aes(x=ploidy, y=x_IC50)) +
 p3 <- p1 / p2
 p3
 
-fileName <- "MiMB2024-ploidy_plot_CGA_IC50.png"
+fileName <- "MiMB2024-ploidy_CGA_IC50_plot.png"
 ggsave(file = fileName, plot = p3, device = "png", path = outputdir,  width = 7, height = 7, dpi = 300)
 ```
-
