@@ -1,11 +1,11 @@
 ---
-title: "MiMB2024_CurveFitting_script"
+title: "MiMB2024-ploidy_CurveFitting_script"
 author: "Koya Yoshizawa"
-date: "2024-03-21"
+date: "2024-04-15"
 output: html_document
 ---
 
-```{r import libraries}
+```{r import packages}
 # import libraries
 if (!require("pacman")) install.packages("pacman")
 library(pacman)
@@ -23,6 +23,7 @@ packagelist <- c(
 )
 pacman::p_load(packagelist, character.only = TRUE)
 #pacman::p_update() #comment out this line after the first use
+#sessionInfo()
 ```
 
 ```{r read csv}
